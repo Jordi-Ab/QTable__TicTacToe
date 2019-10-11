@@ -50,25 +50,27 @@ def assert_correct_selection(selection, board_state):
     try:
         if board_state[s] != ' ':
             raise ValueError
-        return
+        return s
     except KeyError:
         raise ValueError
 
 def human_turn(board_state):
     selection = input("Select a position, from 1 to 9, to place an 'X': ")
     try:
-        assert_correct_selection(selection, board_state)
+        sel = assert_correct_selection(selection, board_state)
         # Update board
-        board_state[selection] = 'X'
+        board_state[sel] = 'X'
         print_board(board_state)
     except ValueError:
         print("Invalid selection")
+        human_turn(board_state)
 
 def init_board():
     board_state = {1:' ',2:' ',3:' ',4:' ',5:' ',6:' ',7:' ',8:' ',9:' '}
     return board_state
 
 def machine_turn(board_state, agent, machine_decision_states):
+    
     board_state_list = list(board_state.values())
     cur_config_hash_ix = agent.get_hash_index(board_state_list)
     
@@ -84,8 +86,7 @@ def machine_turn(board_state, agent, machine_decision_states):
     
     state_action_tuple = deepcopy(board_state), selection
     machine_decision_states.append(state_action_tuple)
-    
-    print('Computer moves: '+str(selection))
+
     board_state[selection] = 'O'
     print_board(board_state)
 
@@ -126,18 +127,18 @@ def ask_for_agent_to_play_against():
     print(list_agents(agents_list))
     while(True):
         answ = input('Which agent would you like to play against? ')
-        available_answers = [0] + range(len(agents_list)+1)
+        available_answers = [str(a) for a in range(len(agents_list)+1)]
         if answ not in available_answers:
             print("Not an available agent.")
-        elif answ == 0:
-            print("Print you chose to create a new Agent.")
+        elif answ == '0':
+            print("You chose to create a new Agent.")
             name = input("Give a name to this Agent: ")
             new_agent = Agent(name)
             with open('agents/'+new_agent.name+'.pickle', 'wb') as handle:
                 pickle.dump(new_agent, handle)
             return new_agent
         else:
-            Ag = agents_list[answ-1]
+            Ag = agents_list[int(answ)-1]
             print("You chose to play against "+ Ag.name)
             print('Good Luck')
             Ag.load_qtable()
@@ -161,7 +162,7 @@ has positions 1-9 starting at the top left.
         human_turn(board_state)
         if win(board_state, 'X'):
             print('Human wins')
-            outcome = 'lost'
+            outcome = 'lose'
             break
         elif no_moves_available(board_state):
             print("It's a draw")
